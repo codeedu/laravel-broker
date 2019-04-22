@@ -1,0 +1,69 @@
+#broker
+version: '3'
+services:
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app_broker1
+    restart: always
+    tty: true
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ../laravel-sso:/var/www/laravel-sso
+      - ./.docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+#    depends_on:
+#      - node
+#      - nginx
+#      - db
+
+  #Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_broker1
+    restart: always
+    tty: true
+    ports:
+      - "8001:80"
+    volumes:
+      - ./:/var/www
+      - ./.docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    container_name: db_broker1
+    restart: always
+    tty: true
+    ports:
+      - "33601:3306"
+    environment:
+      - MYSQL_DATABASE=laravel_broker1
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - ./.docker/dbdata:/var/lib/mysql
+      - ./.docker/mysql/conf.d:/etc/mysql/conf.d
+    networks:
+      - app-network
+
+  node:
+    image: node:10.15.3
+    container_name: node_broker1
+    command: npm install -g cross-env
+    restart: always
+    working_dir: /var/www
+    tty: true
+    volumes:
+      - ./:/var/www
+
+networks:
+  app-network:
+    driver: bridge
